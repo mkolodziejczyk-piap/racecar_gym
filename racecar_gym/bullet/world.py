@@ -6,6 +6,8 @@ from typing import Dict, Any, List
 import gym
 import numpy as np
 import pybullet as p
+from PIL import Image
+from gym import logger
 
 from racecar_gym.bullet import util
 from racecar_gym.bullet.configs import MapConfig
@@ -24,6 +26,7 @@ class World(world.World):
 
     @dataclass
     class Config:
+        name: str
         sdf: str
         map_config: MapConfig
         rendering: bool
@@ -54,7 +57,7 @@ class World(world.World):
         self._state['maps'] = self._maps
         self._tmp_occupancy_map = None      # used for `random_ball` sampling
         self._progress_center = None        # used for `random_ball` sampling
-
+        self._trajectory = []
 
 
     def init(self) -> None:
@@ -86,23 +89,33 @@ class World(world.World):
         if mode == 'grid':
             strategy = AutomaticGridStrategy(obstacle_map=self._maps['obstacle'], number_of_agents=len(self._agents))
         elif mode == 'random':
-            strategy = RandomPositioningStrategy(progress_map=self._maps['progress'], obstacle_map=self._maps['obstacle'])
+            strategy = RandomPositioningStrategy(progress_map=self._maps['progress'],
+                                                 obstacle_map=self._maps['obstacle'], alternate_direction=False)
+        elif mode == 'random_bidirectional':
+            strategy = RandomPositioningStrategy(progress_map=self._maps['progress'],
+                                                 obstacle_map=self._maps['obstacle'], alternate_direction=True)
         elif mode == 'random_ball':
-            progress_radius = 0.1
-            if start_index == 0:    # on first agent, compute a fix interval for sampling and copy occupancy map
-                self._progress_center = progress_radius + random.random() * (1 - progress_radius)  # center+-radius in [0,1]
+            progress_radius = 0.05
+            min_distance_to_wall = 0.5
+            progress_map = self._maps['progress'].map
+            obstacle_map = self._maps['obstacle'].map
+            if start_index == 0:    # on first agent, compute a fixed interval for sampling and copy occupancy map
+                progresses = progress_map[obstacle_map > min_distance_to_wall]                                  # center has enough distance from the walls
+                progresses = progresses[(progresses > progress_radius) & (progresses < (1-progress_radius))]    # center+-radius in [0,1]
+                self._progress_center = np.random.choice(progresses)
                 self._tmp_occupancy_map = self._maps['occupancy'].map.copy()
             strategy = RandomPositioningWithinBallStrategy(progress_map=self._maps['progress'],
                                                            obstacle_map=self._maps['obstacle'],
                                                            drivable_map=self._tmp_occupancy_map,
                                                            progress_center=self._progress_center,
-                                                           progress_radius=progress_radius)
+                                                           progress_radius=progress_radius,
+                                                           min_distance_to_obstacle=min_distance_to_wall)
         else:
             raise NotImplementedError(mode)
         position, orientation = strategy.get_pose(agent_index=start_index)
         if mode == 'random_ball':   # mark surrounding pixels as occupied
             px, py = self._maps['obstacle'].to_pixel(position)
-            neigh_sz = int(0.5 / self._maps['obstacle'].resolution)     # mark 0.5 meters around the car
+            neigh_sz = int(1.0 / self._maps['obstacle'].resolution)     # mark 1 meter around the car
             self._tmp_occupancy_map[px-neigh_sz:px+neigh_sz, py-neigh_sz:py+neigh_sz] = False
         return position, orientation
 
@@ -127,8 +140,12 @@ class World(world.World):
         contact_points = set([c[2] for c in p.getContactPoints(agent.vehicle_id)])
         progress_map = self._maps['progress']
         obstacle_map = self._maps['obstacle']
-        self._state[agent.id]['pose'] = util.get_pose(id=agent.vehicle_id)
-
+        pose = util.get_pose(id=agent.vehicle_id)
+        if pose is None:
+            logger.warn('Could not obtain pose.')
+            self._state[agent.id]['pose'] = np.append((0,0,0), (0,0,0))
+        else:
+            self._state[agent.id]['pose'] = pose
         collision_with_wall = False
         opponent_collisions = []
         opponents = dict([(a.vehicle_id, a.id) for a in self._agents])
@@ -155,10 +172,8 @@ class World(world.World):
         self._state[agent.id]['progress'] = progress
         self._state[agent.id]['obstacle'] = dist_obstacle
         self._state[agent.id]['time'] = self._time
-
         progress = self._state[agent.id]['progress']
         checkpoints = 1.0 / float(self._config.map_config.checkpoints)
-
         checkpoint = int(progress / checkpoints)
 
         if 'checkpoint' in self._state[agent.id]:
@@ -201,3 +216,12 @@ class World(world.World):
             return util.follow_agent(agent=agent, width=width, height=height)
         elif mode == 'birds_eye':
             return util.birds_eye(agent=agent, width=width, height=height)
+        elif mode == 'lidar':
+            return util.lidar(agent=agent, width=width, height=height)
+
+    def seed(self, seed: int = None):
+        if self is None:
+            seed = 0
+        np.random.seed(seed)
+        random.seed(seed)
+        p.ran

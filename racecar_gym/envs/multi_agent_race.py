@@ -7,7 +7,7 @@ from ..core.definitions import Pose, Velocity
 
 class MultiAgentRaceEnv(gym.Env):
 
-    metadata = {'render.modes': ['follow', 'birds_eye']}
+    metadata = {'render.modes': ['follow', 'birds_eye', 'lidar']}
 
     def __init__(self, scenario: MultiAgentScenario):
         self._scenario = scenario
@@ -15,6 +15,10 @@ class MultiAgentRaceEnv(gym.Env):
         self._time = 0.0
         self.observation_space = gym.spaces.Dict([(k, a.observation_space) for k, a in scenario.agents.items()])
         self.action_space = gym.spaces.Dict([(k, a.action_space) for k, a in scenario.agents.items()])
+
+    @property
+    def scenario(self):
+        return self._scenario
 
     def step(self, action: Dict):
 

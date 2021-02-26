@@ -4,7 +4,7 @@ from .scenarios import SingleAgentScenario
 
 class SingleAgentRaceEnv(gym.Env):
 
-    metadata = {'render.modes': ['follow', 'birds_eye']}
+    metadata = {'render.modes': ['follow', 'birds_eye', 'lidar']}
 
     def __init__(self, scenario: SingleAgentScenario):
         self._scenario = scenario
@@ -12,6 +12,10 @@ class SingleAgentRaceEnv(gym.Env):
         self._time = 0.0
         self.observation_space = scenario.agent.observation_space
         self.action_space = scenario.agent.action_space
+
+    @property
+    def scenario(self):
+        return self._scenario
 
     def step(self, action: Dict):
         assert self._initialized, 'Reset before calling step'
@@ -37,4 +41,5 @@ class SingleAgentRaceEnv(gym.Env):
     def render(self, mode: str = 'follow', **kwargs):
         return self._scenario.world.render(mode=mode, agent_id=self._scenario.agent.id, **kwargs)
 
-
+    def seed(self, seed=None):
+        self._scenario.world.seed(seed)
