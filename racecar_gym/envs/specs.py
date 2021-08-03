@@ -34,6 +34,7 @@ class AgentSpec(YamlDataClassConfig):
     id: str
     vehicle: VehicleSpec = VehicleSpec()
     task: TaskSpec = TaskSpec()
+    flatten: bool = False
 
 
 @dataclass
