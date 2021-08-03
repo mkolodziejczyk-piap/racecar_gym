@@ -43,7 +43,7 @@ class Agent:
 
     def observation_flatten(self, observation):
         if self._flatten:
-            action = gym.spaces.utils.flatten(self.observation_space, observation)
+            action = gym.spaces.utils.flatten(self._vehicle.action_space, observation)
 
     def step(self, action):
         observation = self._vehicle.observe()
