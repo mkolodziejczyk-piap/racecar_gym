@@ -38,12 +38,10 @@ class Agent:
             return self._vehicle.observation_space
 
     def action_unflatten(self, action):
-        if self._flatten:
-            action = gym.spaces.utils.unflatten(self._vehicle.action_space, action)
+        return gym.spaces.utils.unflatten(self._vehicle.action_space, action)
 
     def observation_flatten(self, observation):
-        if self._flatten:
-            action = gym.spaces.utils.flatten(self._vehicle.action_space, observation)
+        return gym.spaces.utils.flatten(self._vehicle.observation_space, observation)
 
     def step(self, action):
         observation = self._vehicle.observe()
