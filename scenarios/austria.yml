@@ -4,10 +4,11 @@ agents:
   - id: A
     vehicle:
       name: racecar
-      sensors: [ lidar, pose, velocity, acceleration ]
+      sensors: [ pose, velocity ]
     task:
       task_name: maximize_progress
       params: {laps: 1, time_limit: 120.0, terminate_on_collision: False}
+    flatten: True
   - id: B
     vehicle:
       name: racecar
@@ -15,6 +16,7 @@ agents:
     task:
       task_name: maximize_progress
       params: {laps: 1, time_limit: 120.0, terminate_on_collision: False}
+    flatten: True
   - id: C
     vehicle:
       name: racecar
@@ -22,6 +24,7 @@ agents:
     task:
       task_name: maximize_progress
       params: {laps: 1, time_limit: 120.0, terminate_on_collision: False}
+    flatten: True
   - id: D
     vehicle:
       name: racecar
@@ -29,3 +32,4 @@ agents:
     task:
       task_name: maximize_progress
       params: {laps: 1, time_limit: 120.0, terminate_on_collision: False}
+    flatten: True

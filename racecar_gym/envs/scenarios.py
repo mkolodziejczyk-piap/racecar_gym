@@ -42,6 +42,6 @@ class SingleAgentScenario:
         if rendering:
             spec.world.rendering = rendering
         agent_spec = spec.agents[0]
-        agent = Agent(id=agent_spec.id, vehicle=load_vehicle(agent_spec.vehicle), task=task_from_spec(agent_spec.task))
+        agent = Agent(id=agent_spec.id, vehicle=load_vehicle(agent_spec.vehicle), task=task_from_spec(agent_spec.task), flatten=agent_spec.flatten)
 
         return SingleAgentScenario(world=load_world(spec.world, agents=[agent]), agent=agent)
