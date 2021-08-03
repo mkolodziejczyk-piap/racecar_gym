@@ -41,9 +41,9 @@ class SingleAgentRaceEnv(gym.Env):
 
     def step(self, action: Any):
         if self._scenario.agent._flatten:
-            self._step_array(action)
+            return self._step_array(action)
         else:
-            self._step_dict(action)
+            return self._step_dict(action)
 
     def reset(self, mode: str = 'grid'):
         if not self._initialized:
